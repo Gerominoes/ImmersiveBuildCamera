@@ -7,49 +7,52 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
 
-    <!-- Change this to your actual Valheim folder -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- Actual Steam Valheim install -->
     <ValheimDir>C:\Program Files (x86)\Steam\steamapps\common\Valheim</ValheimDir>
 
-    <!-- Change this if you use r2modman or Thunderstore profiles -->
-    <PluginOutputDir>$(ValheimDir)\BepInEx\plugins\ImmersiveBuildCamera</PluginOutputDir>
+    <!-- Gale profile BepInEx folder -->
+    <BepInExDir>C:\Users\MJ\AppData\Roaming\com.kesomannen.gale\valheim\profiles\Clean Dev\BepInEx</BepInExDir>
+
+    <ManagedDir>$(ValheimDir)\valheim_Data\Managed</ManagedDir>
+    <PluginOutputDir>$(BepInExDir)\plugins\ImmersiveBuildCamera</PluginOutputDir>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- BepInEx -->
     <Reference Include="BepInEx">
-      <HintPath>$(ValheimDir)\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(BepInExDir)\core\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <Reference Include="0Harmony">
-      <HintPath>$(ValheimDir)\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(BepInExDir)\core\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
-    <!-- Valheim -->
     <Reference Include="assembly_valheim">
-      <HintPath>$(ValheimDir)\valheim_Data\Managed\assembly_valheim.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_valheim.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
-    <!-- Unity -->
     <Reference Include="UnityEngine">
-      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

@@ -1,8 +1,13 @@
+using HarmonyLib;
+
 namespace ImmersiveBuildCamera;
 
 internal static class BuildCameraState
 {
     internal static bool Active { get; private set; }
+
+    private static readonly System.Reflection.FieldInfo? RightItemField =
+        AccessTools.Field(typeof(Humanoid), "m_rightItem");
 
     internal static void Update(Player player)
     {
@@ -28,7 +33,14 @@ internal static class BuildCameraState
 
     private static bool HasBuildTool(Player player)
     {
-        ItemDrop.ItemData rightItem = player.m_rightItem;
+        if (RightItemField == null)
+        {
+            Plugin.Log.LogWarning("Could not find Humanoid.m_rightItem.");
+            return false;
+        }
+
+        ItemDrop.ItemData? rightItem =
+            RightItemField.GetValue(player) as ItemDrop.ItemData;
 
         if (rightItem == null)
             return false;

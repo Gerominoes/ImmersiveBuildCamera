@@ -3,19 +3,29 @@ using UnityEngine;
 
 namespace ImmersiveBuildCamera;
 
-[HarmonyPatch(typeof(GameCamera), nameof(GameCamera.UpdateCamera))]
+[HarmonyPatch(typeof(GameCamera))]
+[HarmonyPatch("UpdateCamera")]
 internal static class GameCameraUpdatePatch
 {
+    private static readonly System.Reflection.FieldInfo? CameraField =
+        AccessTools.Field(typeof(GameCamera), "m_camera");
+
     private static float _originalFov;
     private static float _originalNearClip;
     private static bool _savedOriginals;
 
-    private static void Postfix(GameCamera __instance, float dt)
+    private static void Postfix(GameCamera __instance)
     {
         if (__instance == null)
             return;
 
-        Camera camera = __instance.m_camera;
+        Camera? camera = GetCamera(__instance);
+
+        if (camera == null)
+        {
+            Plugin.Log.LogWarning("Could not find GameCamera.m_camera. Falling back to Camera.main.");
+            camera = Camera.main;
+        }
 
         if (camera == null)
             return;
@@ -36,6 +46,14 @@ internal static class GameCameraUpdatePatch
         ApplyImmersiveBuildCamera(__instance, camera);
     }
 
+    private static Camera? GetCamera(GameCamera gameCamera)
+    {
+        if (CameraField == null)
+            return null;
+
+        return CameraField.GetValue(gameCamera) as Camera;
+    }
+
     private static void ApplyImmersiveBuildCamera(GameCamera gameCamera, Camera camera)
     {
         Player player = Player.m_localPlayer;
@@ -52,11 +70,6 @@ internal static class GameCameraUpdatePatch
 
         camera.fieldOfView = Plugin.BuildFov.Value;
         camera.nearClipPlane = Plugin.NearClip.Value;
-
-        if (gameCamera.m_skyCamera != null)
-        {
-            gameCamera.m_skyCamera.fieldOfView = Plugin.BuildFov.Value;
-        }
     }
 
     private static void RestoreCamera(Camera camera)
