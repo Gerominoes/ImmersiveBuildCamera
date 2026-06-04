@@ -14,6 +14,8 @@ internal static class GameCameraUpdatePatch
     private static float _originalNearClip;
     private static bool _savedOriginals;
 
+    private static int _cachedCollisionMask = -1;
+
     private static void Postfix(GameCamera __instance)
     {
         if (__instance == null)
@@ -23,7 +25,6 @@ internal static class GameCameraUpdatePatch
 
         if (camera == null)
         {
-            Plugin.Log.LogWarning("Could not find GameCamera.m_camera. Falling back to Camera.main.");
             camera = Camera.main;
         }
 
@@ -65,11 +66,74 @@ internal static class GameCameraUpdatePatch
             ? player.m_eye
             : player.transform;
 
-        gameCamera.transform.position = eye.position;
-        gameCamera.transform.rotation = eye.rotation;
+        Vector3 anchorPosition = eye.position;
+        Vector3 desiredPosition = anchorPosition;
+        Quaternion desiredRotation = eye.rotation;
+
+        if (Plugin.ShoulderPeekKey.Value.IsPressed())
+        {
+            desiredPosition += eye.right * Plugin.ShoulderOffsetX.Value;
+            desiredPosition += eye.up * Plugin.ShoulderOffsetY.Value;
+            desiredPosition -= eye.forward * Plugin.ShoulderDistance.Value;
+
+            desiredPosition = ResolveCameraCollision(anchorPosition, desiredPosition);
+        }
+
+        gameCamera.transform.position = desiredPosition;
+        gameCamera.transform.rotation = desiredRotation;
 
         camera.fieldOfView = Plugin.BuildFov.Value;
         camera.nearClipPlane = Plugin.NearClip.Value;
+    }
+
+    private static Vector3 ResolveCameraCollision(Vector3 anchorPosition, Vector3 desiredPosition)
+    {
+        Vector3 offset = desiredPosition - anchorPosition;
+        float distance = offset.magnitude;
+
+        if (distance <= 0.001f)
+            return desiredPosition;
+
+        Vector3 direction = offset / distance;
+
+        bool hitSomething = Physics.SphereCast(
+            anchorPosition,
+            Mathf.Max(0.01f, Plugin.CollisionRadius.Value),
+            direction,
+            out RaycastHit hit,
+            distance,
+            GetCollisionMask(),
+            QueryTriggerInteraction.Ignore
+        );
+
+        if (!hitSomething)
+            return desiredPosition;
+
+        float safeDistance = Mathf.Max(0f, hit.distance - Plugin.CollisionRadius.Value);
+        return anchorPosition + direction * safeDistance;
+    }
+
+    private static int GetCollisionMask()
+    {
+        if (_cachedCollisionMask != -1)
+            return _cachedCollisionMask;
+
+        int mask = LayerMask.GetMask(
+            "Default",
+            "static_solid",
+            "terrain",
+            "piece",
+            "piece_nonsolid"
+        );
+
+        if (mask == 0)
+        {
+            mask = Physics.DefaultRaycastLayers;
+            Plugin.Log.LogWarning("Could not resolve Valheim-specific camera collision layers. Falling back to Physics.DefaultRaycastLayers.");
+        }
+
+        _cachedCollisionMask = mask;
+        return _cachedCollisionMask;
     }
 
     private static void RestoreCamera(Camera camera)
