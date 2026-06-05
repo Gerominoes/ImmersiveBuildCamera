@@ -65,7 +65,7 @@ internal static class GameCameraUpdatePatch
         Vector3 desiredPosition = anchorPosition;
         Quaternion desiredRotation = eye.rotation;
 
-        int shoulderDirection = GetShoulderDirection();
+        int shoulderDirection = BuildCameraState.GetShoulderDirection();
 
         if (shoulderDirection != 0)
         {
@@ -83,20 +83,6 @@ internal static class GameCameraUpdatePatch
 
         camera.fieldOfView = Plugin.BuildFov.Value;
         camera.nearClipPlane = Plugin.NearClip.Value;
-    }
-
-    private static int GetShoulderDirection()
-    {
-        bool left = Input.GetKey(Plugin.LeftShoulderKey.Value);
-        bool right = Input.GetKey(Plugin.RightShoulderKey.Value);
-
-        if (left && !right)
-            return -1;
-
-        if (right && !left)
-            return 1;
-
-        return 0;
     }
 
     private static Vector3 ResolveCameraCollision(Vector3 anchorPosition, Vector3 desiredPosition)

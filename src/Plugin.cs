@@ -12,7 +12,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "com.geronimo.valheim.immersivebuildcamera";
     public const string PluginName = "Immersive Build Camera";
-    public const string PluginVersion = "0.2.2";
+    public const string PluginVersion = "0.2.3";
 
     internal static ManualLogSource Log = null!;
 
@@ -28,10 +28,13 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<float> ShoulderOffsetY = null!;
     internal static ConfigEntry<float> ShoulderDistance = null!;
     internal static ConfigEntry<float> CollisionRadius = null!;
+    internal static ConfigEntry<bool> ToggleShoulderPeek = null!;
 
     internal static ConfigEntry<bool> EnablePrecisionMovement = null!;
     internal static ConfigEntry<bool> PrecisionMovementDefaultOn = null!;
     internal static ConfigEntry<float> PrecisionMoveMultiplier = null!;
+
+    internal static ConfigEntry<bool> HideLocalPlayerWhenImmersive = null!;
 
     private Harmony _harmony = null!;
 
@@ -57,14 +60,14 @@ public sealed class Plugin : BaseUnityPlugin
             "Input",
             "LeftShoulderKey",
             KeyCode.Q,
-            "Hold this while immersive build camera is active to peek left."
+            "Hold or press this while immersive build camera is active to peek left, depending on ToggleShoulderPeek."
         );
 
         RightShoulderKey = Config.Bind(
             "Input",
             "RightShoulderKey",
             KeyCode.E,
-            "Hold this while immersive build camera is active to peek right."
+            "Hold or press this while immersive build camera is active to peek right, depending on ToggleShoulderPeek."
         );
 
         BuildFov = Config.Bind(
@@ -109,6 +112,13 @@ public sealed class Plugin : BaseUnityPlugin
             "Sphere radius used to prevent shoulder peek camera clipping into objects."
         );
 
+        ToggleShoulderPeek = Config.Bind(
+            "Shoulder Peek",
+            "ToggleShoulderPeek",
+            false,
+            "If false, shoulder peek keys must be held. If true, shoulder peek keys toggle left, right, or centered."
+        );
+
         EnablePrecisionMovement = Config.Bind(
             "Movement",
             "EnablePrecisionMovement",
@@ -130,6 +140,13 @@ public sealed class Plugin : BaseUnityPlugin
             "Movement input multiplier when precision movement is enabled. Lower means slower."
         );
 
+        HideLocalPlayerWhenImmersive = Config.Bind(
+            "Local Visibility",
+            "HideLocalPlayerWhenImmersive",
+            true,
+            "Hide only the local player's renderers while immersive build camera is active and shoulder peek is not being used."
+        );
+
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
 
@@ -140,6 +157,7 @@ public sealed class Plugin : BaseUnityPlugin
 
     private void OnDestroy()
     {
+        PlayerRendererVisibility.ForceVisible();
         _harmony?.UnpatchSelf();
     }
 }

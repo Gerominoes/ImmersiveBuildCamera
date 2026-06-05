@@ -8,6 +8,10 @@ internal static class BuildCameraState
     internal static bool Active { get; private set; }
     internal static bool PrecisionMovementActive { get; private set; }
 
+    internal static bool ShoulderPeekActive => Active && GetShoulderDirection() != 0;
+
+    private static int _toggledShoulderDirection;
+
     private static readonly System.Reflection.FieldInfo? RightItemField =
         AccessTools.Field(typeof(Humanoid), "m_rightItem");
 
@@ -32,11 +36,78 @@ internal static class BuildCameraState
         if (!Active)
             return;
 
+        UpdateShoulderPeekState();
+
         if (Plugin.EnablePrecisionMovement.Value &&
             Input.GetKeyDown(Plugin.TogglePrecisionMovementKey.Value))
         {
             SetPrecisionMovement(!PrecisionMovementActive);
         }
+    }
+
+    internal static int GetShoulderDirection()
+    {
+        if (!Active)
+            return 0;
+
+        if (Plugin.ToggleShoulderPeek.Value)
+            return _toggledShoulderDirection;
+
+        return GetHeldShoulderDirection();
+    }
+
+    private static void UpdateShoulderPeekState()
+    {
+        if (!Plugin.ToggleShoulderPeek.Value)
+        {
+            _toggledShoulderDirection = 0;
+            return;
+        }
+
+        bool leftPressed = Input.GetKeyDown(Plugin.LeftShoulderKey.Value);
+        bool rightPressed = Input.GetKeyDown(Plugin.RightShoulderKey.Value);
+
+        if (leftPressed && rightPressed)
+        {
+            _toggledShoulderDirection = 0;
+            return;
+        }
+
+        if (leftPressed)
+        {
+            ToggleShoulderDirection(-1);
+            return;
+        }
+
+        if (rightPressed)
+        {
+            ToggleShoulderDirection(1);
+        }
+    }
+
+    private static void ToggleShoulderDirection(int direction)
+    {
+        if (_toggledShoulderDirection == direction)
+        {
+            _toggledShoulderDirection = 0;
+            return;
+        }
+
+        _toggledShoulderDirection = direction;
+    }
+
+    private static int GetHeldShoulderDirection()
+    {
+        bool left = Input.GetKey(Plugin.LeftShoulderKey.Value);
+        bool right = Input.GetKey(Plugin.RightShoulderKey.Value);
+
+        if (left && !right)
+            return -1;
+
+        if (right && !left)
+            return 1;
+
+        return 0;
     }
 
     private static void SetActive(bool active)
@@ -55,6 +126,8 @@ internal static class BuildCameraState
         else
         {
             PrecisionMovementActive = false;
+            _toggledShoulderDirection = 0;
+            PlayerRendererVisibility.ForceVisible();
         }
 
         Plugin.Log.LogInfo(active
