@@ -155,7 +155,7 @@ internal static class PlayerRendererVisibility
         foreach (Renderer renderer in OriginalRendererStates.Keys)
         {
             if (renderer == null)
-                DeadRenderers.Add(renderer);
+                DeadRenderers.Add(renderer!);
         }
 
         foreach (Renderer renderer in DeadRenderers)
