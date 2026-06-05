@@ -10,7 +10,7 @@ namespace ImmersiveBuildCamera;
 [BepInProcess("valheim.exe")]
 public sealed class Plugin : BaseUnityPlugin
 {
-    public const string PluginGuid = "com.melle.valheim.immersivebuildcamera";
+    public const string PluginGuid = "com.geronimo.valheim.immersivebuildcamera";
     public const string PluginName = "Immersive Build Camera";
     public const string PluginVersion = "0.2.2";
 
