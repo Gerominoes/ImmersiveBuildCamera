@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace ImmersiveBuildCamera;
 
@@ -6,35 +7,29 @@ internal static class PrecisionMovementPatches
 {
     internal static void Apply(Harmony harmony)
     {
-        PatchSpeedFactor(harmony, "GetJogSpeedFactor");
-        PatchSpeedFactor(harmony, "GetRunSpeedFactor");
-    }
-
-    private static void PatchSpeedFactor(Harmony harmony, string methodName)
-    {
         System.Reflection.MethodInfo? original =
-            AccessTools.Method(typeof(Character), methodName);
+            AccessTools.Method(typeof(Player), "SetControls");
 
-        System.Reflection.MethodInfo? postfix =
-            AccessTools.Method(typeof(PrecisionMovementPatches), nameof(PostfixSpeedFactor));
+        System.Reflection.MethodInfo? prefix =
+            AccessTools.Method(typeof(PrecisionMovementPatches), nameof(PrefixSetControls));
 
         if (original == null)
         {
-            Plugin.Log.LogWarning($"Could not find Character.{methodName}. Precision movement patch skipped for this method.");
+            Plugin.Log.LogWarning("Could not find Player.SetControls. Precision movement patch skipped.");
             return;
         }
 
-        if (postfix == null)
+        if (prefix == null)
         {
-            Plugin.Log.LogWarning("Could not find precision movement postfix method.");
+            Plugin.Log.LogWarning("Could not find precision movement prefix.");
             return;
         }
 
-        harmony.Patch(original, postfix: new HarmonyMethod(postfix));
-        Plugin.Log.LogInfo($"Patched Character.{methodName} for precision movement.");
+        harmony.Patch(original, prefix: new HarmonyMethod(prefix));
+        Plugin.Log.LogInfo("Patched Player.SetControls for precision movement.");
     }
 
-    private static void PostfixSpeedFactor(Character __instance, ref float __result)
+    private static void PrefixSetControls(Player __instance, ref Vector3 movedir, ref bool run, ref bool autoRun)
     {
         if (!Plugin.EnablePrecisionMovement.Value)
             return;
@@ -42,12 +37,20 @@ internal static class PrecisionMovementPatches
         if (!BuildCameraState.Active)
             return;
 
+        if (!BuildCameraState.PrecisionMovementActive)
+            return;
+
         if (__instance != Player.m_localPlayer)
             return;
 
-        float multiplier = Plugin.PrecisionMoveMultiplier.Value;
-        multiplier = UnityEngine.Mathf.Clamp(multiplier, 0.05f, 1f);
+        float multiplier = Mathf.Clamp(
+            Plugin.PrecisionMoveMultiplier.Value,
+            0.05f,
+            1f
+        );
 
-        __result *= multiplier;
+        movedir *= multiplier;
+        run = false;
+        autoRun = false;
     }
 }

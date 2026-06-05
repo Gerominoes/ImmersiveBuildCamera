@@ -21,12 +21,7 @@ internal static class GameCameraUpdatePatch
         if (__instance == null)
             return;
 
-        Camera? camera = GetCamera(__instance);
-
-        if (camera == null)
-        {
-            camera = Camera.main;
-        }
+        Camera? camera = GetCamera(__instance) ?? Camera.main;
 
         if (camera == null)
             return;
@@ -70,9 +65,13 @@ internal static class GameCameraUpdatePatch
         Vector3 desiredPosition = anchorPosition;
         Quaternion desiredRotation = eye.rotation;
 
-        if (Plugin.ShoulderPeekKey.Value.IsPressed())
+        int shoulderDirection = GetShoulderDirection();
+
+        if (shoulderDirection != 0)
         {
-            desiredPosition += eye.right * Plugin.ShoulderOffsetX.Value;
+            float sideOffset = Plugin.ShoulderOffsetX.Value * shoulderDirection;
+
+            desiredPosition += eye.right * sideOffset;
             desiredPosition += eye.up * Plugin.ShoulderOffsetY.Value;
             desiredPosition -= eye.forward * Plugin.ShoulderDistance.Value;
 
@@ -84,6 +83,20 @@ internal static class GameCameraUpdatePatch
 
         camera.fieldOfView = Plugin.BuildFov.Value;
         camera.nearClipPlane = Plugin.NearClip.Value;
+    }
+
+    private static int GetShoulderDirection()
+    {
+        bool left = Input.GetKey(Plugin.LeftShoulderKey.Value);
+        bool right = Input.GetKey(Plugin.RightShoulderKey.Value);
+
+        if (left && !right)
+            return -1;
+
+        if (right && !left)
+            return 1;
+
+        return 0;
     }
 
     private static Vector3 ResolveCameraCollision(Vector3 anchorPosition, Vector3 desiredPosition)
@@ -129,7 +142,7 @@ internal static class GameCameraUpdatePatch
         if (mask == 0)
         {
             mask = Physics.DefaultRaycastLayers;
-            Plugin.Log.LogWarning("Could not resolve Valheim-specific camera collision layers. Falling back to Physics.DefaultRaycastLayers.");
+            Plugin.Log.LogWarning("Could not resolve Valheim-specific collision layers. Falling back to Physics.DefaultRaycastLayers.");
         }
 
         _cachedCollisionMask = mask;

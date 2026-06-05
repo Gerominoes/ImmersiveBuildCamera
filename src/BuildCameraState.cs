@@ -1,34 +1,88 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace ImmersiveBuildCamera;
 
 internal static class BuildCameraState
 {
     internal static bool Active { get; private set; }
+    internal static bool PrecisionMovementActive { get; private set; }
 
     private static readonly System.Reflection.FieldInfo? RightItemField =
         AccessTools.Field(typeof(Humanoid), "m_rightItem");
 
     internal static void Update(Player player)
     {
-        Active = false;
-
-        if (player == null)
+        if (player == null || player != Player.m_localPlayer)
             return;
 
-        if (player != Player.m_localPlayer)
+        bool canUseCamera = CanUseImmersiveCamera(player);
+
+        if (!canUseCamera)
+        {
+            SetActive(false);
+            return;
+        }
+
+        if (Input.GetKeyDown(Plugin.ToggleCameraKey.Value))
+        {
+            SetActive(!Active);
+        }
+
+        if (!Active)
             return;
 
+        if (Plugin.EnablePrecisionMovement.Value &&
+            Input.GetKeyDown(Plugin.TogglePrecisionMovementKey.Value))
+        {
+            SetPrecisionMovement(!PrecisionMovementActive);
+        }
+    }
+
+    private static void SetActive(bool active)
+    {
+        if (Active == active)
+            return;
+
+        Active = active;
+
+        if (active)
+        {
+            PrecisionMovementActive =
+                Plugin.EnablePrecisionMovement.Value &&
+                Plugin.PrecisionMovementDefaultOn.Value;
+        }
+        else
+        {
+            PrecisionMovementActive = false;
+        }
+
+        Plugin.Log.LogInfo(active
+            ? $"Immersive build camera active. Precision movement: {(PrecisionMovementActive ? "on" : "off")}."
+            : "Immersive build camera inactive.");
+    }
+
+    private static void SetPrecisionMovement(bool active)
+    {
+        if (PrecisionMovementActive == active)
+            return;
+
+        PrecisionMovementActive = active;
+
+        Plugin.Log.LogInfo(active
+            ? "Precision movement active."
+            : "Precision movement inactive.");
+    }
+
+    private static bool CanUseImmersiveCamera(Player player)
+    {
         if (!IsSafePlayerState(player))
-            return;
+            return false;
 
         if (!HasBuildTool(player))
-            return;
+            return false;
 
-        if (!Plugin.HoldInspectKey.Value.IsPressed())
-            return;
-
-        Active = true;
+        return true;
     }
 
     private static bool HasBuildTool(Player player)

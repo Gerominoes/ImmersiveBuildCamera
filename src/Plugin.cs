@@ -12,12 +12,14 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "com.melle.valheim.immersivebuildcamera";
     public const string PluginName = "Immersive Build Camera";
-    public const string PluginVersion = "0.2.0";
+    public const string PluginVersion = "0.2.2";
 
     internal static ManualLogSource Log = null!;
 
-    internal static ConfigEntry<KeyboardShortcut> HoldInspectKey = null!;
-    internal static ConfigEntry<KeyboardShortcut> ShoulderPeekKey = null!;
+    internal static ConfigEntry<KeyCode> ToggleCameraKey = null!;
+    internal static ConfigEntry<KeyCode> TogglePrecisionMovementKey = null!;
+    internal static ConfigEntry<KeyCode> LeftShoulderKey = null!;
+    internal static ConfigEntry<KeyCode> RightShoulderKey = null!;
 
     internal static ConfigEntry<float> BuildFov = null!;
     internal static ConfigEntry<float> NearClip = null!;
@@ -28,6 +30,7 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<float> CollisionRadius = null!;
 
     internal static ConfigEntry<bool> EnablePrecisionMovement = null!;
+    internal static ConfigEntry<bool> PrecisionMovementDefaultOn = null!;
     internal static ConfigEntry<float> PrecisionMoveMultiplier = null!;
 
     private Harmony _harmony = null!;
@@ -36,18 +39,32 @@ public sealed class Plugin : BaseUnityPlugin
     {
         Log = Logger;
 
-        HoldInspectKey = Config.Bind(
+        ToggleCameraKey = Config.Bind(
             "Input",
-            "HoldInspectKey",
-            new KeyboardShortcut(KeyCode.LeftAlt),
-            "Hold this while using a build tool to enter immersive build camera."
+            "ToggleCameraKey",
+            KeyCode.LeftAlt,
+            "Press this while using a build tool to toggle immersive build camera."
         );
 
-        ShoulderPeekKey = Config.Bind(
+        TogglePrecisionMovementKey = Config.Bind(
             "Input",
-            "ShoulderPeekKey",
-            new KeyboardShortcut(KeyCode.C),
-            "Hold this while immersive build camera is active to use shoulder peek. Change this if it conflicts with your controls."
+            "TogglePrecisionMovementKey",
+            KeyCode.LeftControl,
+            "Press this while immersive build camera is active to toggle slow precision movement."
+        );
+
+        LeftShoulderKey = Config.Bind(
+            "Input",
+            "LeftShoulderKey",
+            KeyCode.Q,
+            "Hold this while immersive build camera is active to peek left."
+        );
+
+        RightShoulderKey = Config.Bind(
+            "Input",
+            "RightShoulderKey",
+            KeyCode.E,
+            "Hold this while immersive build camera is active to peek right."
         );
 
         BuildFov = Config.Bind(
@@ -67,28 +84,28 @@ public sealed class Plugin : BaseUnityPlugin
         ShoulderOffsetX = Config.Bind(
             "Shoulder Peek",
             "ShoulderOffsetX",
-            0.32f,
-            "Horizontal shoulder offset. Positive is right, negative is left."
+            0.75f,
+            "Horizontal shoulder offset. Higher values make shoulder peek more useful but more likely to hit collision."
         );
 
         ShoulderOffsetY = Config.Bind(
             "Shoulder Peek",
             "ShoulderOffsetY",
-            0.03f,
+            0.06f,
             "Vertical shoulder offset."
         );
 
         ShoulderDistance = Config.Bind(
             "Shoulder Peek",
             "ShoulderDistance",
-            0.38f,
-            "Small backward distance for shoulder peek."
+            0.50f,
+            "Backward shoulder camera distance."
         );
 
         CollisionRadius = Config.Bind(
             "Shoulder Peek",
             "CollisionRadius",
-            0.12f,
+            0.10f,
             "Sphere radius used to prevent shoulder peek camera clipping into objects."
         );
 
@@ -96,14 +113,21 @@ public sealed class Plugin : BaseUnityPlugin
             "Movement",
             "EnablePrecisionMovement",
             true,
-            "Reduce player movement speed while immersive build camera is active."
+            "Allow slow precision movement while immersive build camera is active."
+        );
+
+        PrecisionMovementDefaultOn = Config.Bind(
+            "Movement",
+            "PrecisionMovementDefaultOn",
+            true,
+            "Whether slow precision movement starts enabled whenever immersive build camera is toggled on."
         );
 
         PrecisionMoveMultiplier = Config.Bind(
             "Movement",
             "PrecisionMoveMultiplier",
             0.35f,
-            "Movement speed multiplier while immersive build camera is active. Lower means slower."
+            "Movement input multiplier when precision movement is enabled. Lower means slower."
         );
 
         _harmony = new Harmony(PluginGuid);
