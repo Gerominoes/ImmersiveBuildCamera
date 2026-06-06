@@ -12,7 +12,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "com.geronimo.valheim.immersivebuildcamera";
     public const string PluginName = "Immersive Build Camera";
-    public const string PluginVersion = "0.2.3";
+    public const string PluginVersion = "1.1.0";
 
     internal static ManualLogSource Log = null!;
 
@@ -23,6 +23,14 @@ public sealed class Plugin : BaseUnityPlugin
 
     internal static ConfigEntry<float> BuildFov = null!;
     internal static ConfigEntry<float> NearClip = null!;
+    internal static ConfigEntry<float> CameraTransitionSpeed = null!;
+
+    internal static ConfigEntry<bool> EnableScrollDistanceAdjust = null!;
+    internal static ConfigEntry<float> DefaultBuildCameraDistance = null!;
+    internal static ConfigEntry<float> MinBuildCameraDistance = null!;
+    internal static ConfigEntry<float> MaxBuildCameraDistance = null!;
+    internal static ConfigEntry<float> ScrollDistanceStep = null!;
+    internal static ConfigEntry<bool> RememberScrollDistance = null!;
 
     internal static ConfigEntry<float> ShoulderOffsetX = null!;
     internal static ConfigEntry<float> ShoulderOffsetY = null!;
@@ -35,6 +43,8 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<float> PrecisionMoveMultiplier = null!;
 
     internal static ConfigEntry<bool> HideLocalPlayerWhenImmersive = null!;
+
+    internal static ConfigEntry<bool> EnableDebugLogs = null!;
 
     private Harmony _harmony = null!;
 
@@ -84,10 +94,59 @@ public sealed class Plugin : BaseUnityPlugin
             "Near clipping plane while immersive build camera is active."
         );
 
+        CameraTransitionSpeed = Config.Bind(
+            "Camera",
+            "CameraTransitionSpeed",
+            12f,
+            "How quickly the immersive build camera moves toward its target. Set to 0 for instant movement."
+        );
+
+        EnableScrollDistanceAdjust = Config.Bind(
+            "Camera Distance",
+            "EnableScrollDistanceAdjust",
+            true,
+            "Allow the mouse wheel to move the immersive build camera closer or farther while active."
+        );
+
+        DefaultBuildCameraDistance = Config.Bind(
+            "Camera Distance",
+            "DefaultBuildCameraDistance",
+            0f,
+            "Starting backward camera distance from the player's eye when immersive build camera turns on."
+        );
+
+        MinBuildCameraDistance = Config.Bind(
+            "Camera Distance",
+            "MinBuildCameraDistance",
+            0f,
+            "Closest allowed camera distance when adjusting with the mouse wheel."
+        );
+
+        MaxBuildCameraDistance = Config.Bind(
+            "Camera Distance",
+            "MaxBuildCameraDistance",
+            1.25f,
+            "Farthest allowed camera distance when adjusting with the mouse wheel."
+        );
+
+        ScrollDistanceStep = Config.Bind(
+            "Camera Distance",
+            "ScrollDistanceStep",
+            0.05f,
+            "Distance changed per mouse wheel notch while immersive build camera is active."
+        );
+
+        RememberScrollDistance = Config.Bind(
+            "Camera Distance",
+            "RememberScrollDistance",
+            false,
+            "If true, keeps the adjusted camera distance between immersive build camera sessions."
+        );
+
         ShoulderOffsetX = Config.Bind(
             "Shoulder Peek",
             "ShoulderOffsetX",
-            0.75f,
+            0.90f,
             "Horizontal shoulder offset. Higher values make shoulder peek more useful but more likely to hit collision."
         );
 
@@ -101,7 +160,7 @@ public sealed class Plugin : BaseUnityPlugin
         ShoulderDistance = Config.Bind(
             "Shoulder Peek",
             "ShoulderDistance",
-            0.50f,
+            0.55f,
             "Backward shoulder camera distance."
         );
 
@@ -147,16 +206,30 @@ public sealed class Plugin : BaseUnityPlugin
             "Hide only the local player's renderers while immersive build camera is active and shoulder peek is not being used."
         );
 
+        EnableDebugLogs = Config.Bind(
+            "Debug",
+            "EnableDebugLogs",
+            false,
+            "Enable extra logging for camera, shoulder peek, precision movement, visibility, and cleanup state changes."
+        );
+
         _harmony = new Harmony(PluginGuid);
         _harmony.PatchAll();
 
         PrecisionMovementPatches.Apply(_harmony);
 
-        Log.LogInfo($"{PluginName} loaded.");
+        Log.LogInfo($"{PluginName} {PluginVersion} loaded.");
+    }
+
+    internal static void DebugLog(string message)
+    {
+        if (EnableDebugLogs?.Value == true)
+            Log.LogInfo($"[Debug] {message}");
     }
 
     private void OnDestroy()
     {
+        BuildCameraState.ForceInactive();
         PlayerRendererVisibility.ForceVisible();
         _harmony?.UnpatchSelf();
     }
