@@ -6,6 +6,8 @@ internal static class BuildCameraDistance
 {
     internal static float Current { get; private set; }
 
+    private const float HeldInputStepsPerSecond = 20f;
+
     private static bool _initialized;
 
     internal static void ResetForSession()
@@ -26,26 +28,17 @@ internal static class BuildCameraDistance
         if (step <= 0f)
             return;
 
-        if (Input.GetKeyDown(Plugin.CameraDistanceCloserKey.Value))
+        float heldDelta = step * HeldInputStepsPerSecond * Time.unscaledDeltaTime;
+
+        if (Input.GetKey(Plugin.CameraDistanceCloserKey.Value))
         {
-            AddDistance(-step);
+            AddDistance(-heldDelta);
         }
 
-        if (Input.GetKeyDown(Plugin.CameraDistanceFartherKey.Value))
+        if (Input.GetKey(Plugin.CameraDistanceFartherKey.Value))
         {
-            AddDistance(step);
+            AddDistance(heldDelta);
         }
-
-        if (!Plugin.EnableScrollDistanceAdjust.Value || Plugin.EnableScrollDistanceAdjust.Value)
-            return;
-
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-
-        if (Mathf.Abs(scroll) <= 0.001f)
-            return;
-
-        float direction = scroll > 0f ? -1f : 1f;
-        AddDistance(direction * step);
     }
 
     private static void AddDistance(float delta)
