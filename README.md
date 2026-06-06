@@ -2,9 +2,7 @@
 
 Immersive Build Camera is a lightweight Valheim mod that improves building by giving the player a closer, smoother, and more controllable camera while using build tools.
 
-<video src="https://raw.githubusercontent.com/Gerominoes/ImmersiveBuildCamera/main/assets/demo.mp4" controls width="100%"></video>
-
-[Watch the demo video](assets/demo.mp4)
+![Immersive Build Camera demo](assets/demo.gif)
 
 The goal is simple: make building feel more precise and immersive without turning Valheim into a detached freecam editor. You stay grounded in the normal game experience, but with better camera positioning, slower movement control, and optional shoulder peeking for tight placements.
 
