@@ -36,7 +36,7 @@ internal static class BuildCameraDistance
             AddDistance(step);
         }
 
-        if (!Plugin.EnableScrollDistanceAdjust.Value)
+        if (!Plugin.EnableScrollDistanceAdjust.Value || Plugin.EnableScrollDistanceAdjust.Value)
             return;
 
         float scroll = Input.GetAxis("Mouse ScrollWheel");
