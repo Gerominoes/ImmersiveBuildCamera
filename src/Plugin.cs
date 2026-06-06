@@ -20,6 +20,8 @@ public sealed class Plugin : BaseUnityPlugin
     internal static ConfigEntry<KeyCode> TogglePrecisionMovementKey = null!;
     internal static ConfigEntry<KeyCode> LeftShoulderKey = null!;
     internal static ConfigEntry<KeyCode> RightShoulderKey = null!;
+    internal static ConfigEntry<KeyCode> CameraDistanceCloserKey = null!;
+    internal static ConfigEntry<KeyCode> CameraDistanceFartherKey = null!;
 
     internal static ConfigEntry<float> BuildFov = null!;
     internal static ConfigEntry<float> NearClip = null!;
@@ -80,6 +82,20 @@ public sealed class Plugin : BaseUnityPlugin
             "Hold or press this while immersive build camera is active to peek right, depending on ToggleShoulderPeek."
         );
 
+        CameraDistanceCloserKey = Config.Bind(
+            "Input",
+            "CameraDistanceCloserKey",
+            KeyCode.PageUp,
+            "Press this while immersive build camera is active to move the camera closer."
+        );
+
+        CameraDistanceFartherKey = Config.Bind(
+            "Input",
+            "CameraDistanceFartherKey",
+            KeyCode.PageDown,
+            "Press this while immersive build camera is active to move the camera farther away."
+        );
+
         BuildFov = Config.Bind(
             "Camera",
             "BuildFov",
@@ -104,8 +120,8 @@ public sealed class Plugin : BaseUnityPlugin
         EnableScrollDistanceAdjust = Config.Bind(
             "Camera Distance",
             "EnableScrollDistanceAdjust",
-            true,
-            "Allow the mouse wheel to move the immersive build camera closer or farther while active."
+            false,
+            "Legacy opt-in. If true, mouse wheel also adjusts camera distance, but this can conflict with Valheim build piece rotation."
         );
 
         DefaultBuildCameraDistance = Config.Bind(
@@ -119,21 +135,21 @@ public sealed class Plugin : BaseUnityPlugin
             "Camera Distance",
             "MinBuildCameraDistance",
             0f,
-            "Closest allowed camera distance when adjusting with the mouse wheel."
+            "Closest allowed camera distance."
         );
 
         MaxBuildCameraDistance = Config.Bind(
             "Camera Distance",
             "MaxBuildCameraDistance",
             1.25f,
-            "Farthest allowed camera distance when adjusting with the mouse wheel."
+            "Farthest allowed camera distance."
         );
 
         ScrollDistanceStep = Config.Bind(
             "Camera Distance",
             "ScrollDistanceStep",
             0.05f,
-            "Distance changed per mouse wheel notch while immersive build camera is active."
+            "Distance changed per camera distance key press or mouse wheel notch."
         );
 
         RememberScrollDistance = Config.Bind(
