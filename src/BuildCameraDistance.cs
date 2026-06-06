@@ -21,6 +21,21 @@ internal static class BuildCameraDistance
 
     internal static void UpdateFromInput()
     {
+        float step = Mathf.Max(0f, Plugin.ScrollDistanceStep.Value);
+
+        if (step <= 0f)
+            return;
+
+        if (Input.GetKeyDown(Plugin.CameraDistanceCloserKey.Value))
+        {
+            AddDistance(-step);
+        }
+
+        if (Input.GetKeyDown(Plugin.CameraDistanceFartherKey.Value))
+        {
+            AddDistance(step);
+        }
+
         if (!Plugin.EnableScrollDistanceAdjust.Value)
             return;
 
@@ -29,13 +44,13 @@ internal static class BuildCameraDistance
         if (Mathf.Abs(scroll) <= 0.001f)
             return;
 
-        float step = Mathf.Max(0f, Plugin.ScrollDistanceStep.Value);
-
-        if (step <= 0f)
-            return;
-
         float direction = scroll > 0f ? -1f : 1f;
-        float next = Clamp(Current + direction * step);
+        AddDistance(direction * step);
+    }
+
+    private static void AddDistance(float delta)
+    {
+        float next = Clamp(Current + delta);
 
         if (Mathf.Approximately(Current, next))
             return;
