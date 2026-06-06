@@ -14,6 +14,10 @@ internal static class GameCameraUpdatePatch
     private static float _originalNearClip;
     private static bool _savedOriginals;
 
+    private static Vector3 _smoothPosition;
+    private static Quaternion _smoothRotation = Quaternion.identity;
+    private static bool _hasSmoothTransform;
+
     private static int _cachedCollisionMask = -1;
 
     private static void Postfix(GameCamera __instance)
@@ -36,6 +40,7 @@ internal static class GameCameraUpdatePatch
         if (!BuildCameraState.Active)
         {
             RestoreCamera(camera);
+            ResetSmoothing();
             return;
         }
 
@@ -52,7 +57,7 @@ internal static class GameCameraUpdatePatch
 
     private static void ApplyImmersiveBuildCamera(GameCamera gameCamera, Camera camera)
     {
-        Player player = Player.m_localPlayer;
+        Player? player = Player.m_localPlayer;
 
         if (player == null)
             return;
@@ -64,6 +69,11 @@ internal static class GameCameraUpdatePatch
         Vector3 anchorPosition = eye.position;
         Vector3 desiredPosition = anchorPosition;
         Quaternion desiredRotation = eye.rotation;
+
+        float cameraDistance = Mathf.Max(0f, BuildCameraDistance.Current);
+
+        if (cameraDistance > 0.001f)
+            desiredPosition -= eye.forward * cameraDistance;
 
         int shoulderDirection = BuildCameraState.GetShoulderDirection();
 
@@ -77,12 +87,34 @@ internal static class GameCameraUpdatePatch
 
             desiredPosition = ResolveCameraCollision(anchorPosition, desiredPosition);
         }
+        else if (cameraDistance > 0.001f)
+        {
+            desiredPosition = ResolveCameraCollision(anchorPosition, desiredPosition);
+        }
 
-        gameCamera.transform.position = desiredPosition;
-        gameCamera.transform.rotation = desiredRotation;
+        ApplySmoothedTransform(gameCamera, desiredPosition, desiredRotation);
 
         camera.fieldOfView = Plugin.BuildFov.Value;
         camera.nearClipPlane = Plugin.NearClip.Value;
+    }
+
+    private static void ApplySmoothedTransform(GameCamera gameCamera, Vector3 desiredPosition, Quaternion desiredRotation)
+    {
+        if (!_hasSmoothTransform)
+        {
+            _smoothPosition = gameCamera.transform.position;
+            _smoothRotation = gameCamera.transform.rotation;
+            _hasSmoothTransform = true;
+        }
+
+        float speed = Mathf.Max(0f, Plugin.CameraTransitionSpeed.Value);
+        float lerp = speed <= 0f ? 1f : 1f - Mathf.Exp(-speed * Time.unscaledDeltaTime);
+
+        _smoothPosition = Vector3.Lerp(_smoothPosition, desiredPosition, lerp);
+        _smoothRotation = Quaternion.Slerp(_smoothRotation, desiredRotation, lerp);
+
+        gameCamera.transform.position = _smoothPosition;
+        gameCamera.transform.rotation = _smoothRotation;
     }
 
     private static Vector3 ResolveCameraCollision(Vector3 anchorPosition, Vector3 desiredPosition)
@@ -142,5 +174,12 @@ internal static class GameCameraUpdatePatch
 
         camera.fieldOfView = _originalFov;
         camera.nearClipPlane = _originalNearClip;
+    }
+
+    private static void ResetSmoothing()
+    {
+        _hasSmoothTransform = false;
+        _smoothPosition = Vector3.zero;
+        _smoothRotation = Quaternion.identity;
     }
 }

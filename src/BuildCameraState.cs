@@ -37,12 +37,18 @@ internal static class BuildCameraState
             return;
 
         UpdateShoulderPeekState();
+        BuildCameraDistance.UpdateFromInput();
 
         if (Plugin.EnablePrecisionMovement.Value &&
             Input.GetKeyDown(Plugin.TogglePrecisionMovementKey.Value))
         {
             SetPrecisionMovement(!PrecisionMovementActive);
         }
+    }
+
+    internal static void ForceInactive()
+    {
+        SetActive(false);
     }
 
     internal static int GetShoulderDirection()
@@ -69,7 +75,7 @@ internal static class BuildCameraState
 
         if (leftPressed && rightPressed)
         {
-            _toggledShoulderDirection = 0;
+            SetShoulderDirection(0);
             return;
         }
 
@@ -89,11 +95,26 @@ internal static class BuildCameraState
     {
         if (_toggledShoulderDirection == direction)
         {
-            _toggledShoulderDirection = 0;
+            SetShoulderDirection(0);
             return;
         }
 
+        SetShoulderDirection(direction);
+    }
+
+    private static void SetShoulderDirection(int direction)
+    {
+        if (_toggledShoulderDirection == direction)
+            return;
+
         _toggledShoulderDirection = direction;
+
+        if (direction < 0)
+            Plugin.DebugLog("Shoulder peek set to left.");
+        else if (direction > 0)
+            Plugin.DebugLog("Shoulder peek set to right.");
+        else
+            Plugin.DebugLog("Shoulder peek centered.");
     }
 
     private static int GetHeldShoulderDirection()
@@ -119,6 +140,8 @@ internal static class BuildCameraState
 
         if (active)
         {
+            BuildCameraDistance.ResetForSession();
+
             PrecisionMovementActive =
                 Plugin.EnablePrecisionMovement.Value &&
                 Plugin.PrecisionMovementDefaultOn.Value;
@@ -126,7 +149,7 @@ internal static class BuildCameraState
         else
         {
             PrecisionMovementActive = false;
-            _toggledShoulderDirection = 0;
+            SetShoulderDirection(0);
             PlayerRendererVisibility.ForceVisible();
         }
 
